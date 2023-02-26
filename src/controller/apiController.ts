@@ -39,16 +39,23 @@ export const register = async (req:Request,res:Response)=>{
 }
 export const edit = async (req:Request,res:Response)=>{
     let {id} = req.params;
+    let {email} = req.body;
     let findData = await User.findByPk(id);
-    if(findData){
-        let {email,password} = req.body;
-        findData.email = email;
-        findData.password = password;
-        findData.save()
-        res.json({sucess:"dado alterado"})
+    let findone = await User.findOne({where:{email}});
+    if(findone){
+        res.json({error: "Email e/ou senha jaexiste."})
     }else{
-        res.json({error:"Usuário não encontrado"})
+        if(findData){
+            let {email,password} = req.body;
+            findData.email = email;
+            findData.password = password;
+            findData.save()
+            res.json({sucess:"dado alterado"})
+        }else{
+            res.json({error:"Usuário não encontrado"})
+        }
     }
+    
 }
 
 export const deleteUser = async (req:Request,res:Response) =>{
