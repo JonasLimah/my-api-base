@@ -1,6 +1,9 @@
 import {User} from '../instance/userInstance'
 import { Request,Response } from "express";
+import JWT from 'jsonwebtoken'
+import dotenv from 'dotenv'
 
+dotenv.config()
 export const ping = (req:Request,res:Response) =>{
     res.json({pong:  true})
 }
@@ -26,8 +29,17 @@ export const register = async (req:Request,res:Response)=>{
     });
     if(req.body.email && req.body.password){
         if(!findeData){
-            let newUser = await User.create(req.body)
-            res.status(201).json({sucess: `Usuario ${newUser.id}`})
+            let newUser = await User.create(req.body);
+            //gerando o token
+            let token = JWT.sign({ //informação do usuario a ser passada
+                id:newUser.id,
+                email: newUser.email
+            },
+                //chave privada e sua expiração
+                process.env.JWT_TOKEN as string,
+                {expiresIn:'2h'}
+            );
+            res.status(201).json({sucess: `Usuario ${newUser.id,token}`})
         }else{
             res.json({error: "Email e/ou senha jaexiste."})
         }
@@ -37,6 +49,31 @@ export const register = async (req:Request,res:Response)=>{
     
 
 }
+export const login = async  (req:Request,res:Response) =>{
+    if(req.body.email && req.body.password){
+        let {email,password} = req.body;
+        let user = await User.findOne({
+            where:{email,password}
+        });
+        if(user){
+            let token = JWT.sign({
+                id:user.id,
+                email: user.email
+            },
+            
+                process.env.JWT_TOKEN as string,
+                {expiresIn:'2h'}
+            );
+           
+            res.json({sucess:true,token});
+        }else{
+            res.json({error: "digite um usuario e senha valido"})
+        }
+    }else{
+        res.json({error: "digite um usuario e senha valido"})
+    }
+}
+
 export const edit = async (req:Request,res:Response)=>{
     let {id} = req.params;
     let {email} = req.body;
